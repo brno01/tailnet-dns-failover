@@ -2,7 +2,7 @@ name: dns-failover
 
 on:
   schedule:
-    - cron: "*/5 * * * *"   # check the watched device
+    - cron: "*/5 * * * *"   # probe the Pi-hole
     - cron: "23 4 * * 1"    # weekly: also keep this schedule from being auto-disabled
   workflow_dispatch:
     inputs:
@@ -22,11 +22,28 @@ concurrency:
 jobs:
   failover:
     runs-on: ubuntu-latest
-    timeout-minutes: 3
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
 
-      - name: Check the device and switch the tailnet DNS
+      # Ephemeral node tagged tag:dns-failover; the tailnet policy lets it reach only
+      # port 53 of the Pi-hole. If joining fails, failover.sh only acts on "host offline".
+      - name: Join the tailnet
+        id: join
+        continue-on-error: true
+        uses: tailscale/github-action@v4
+        with:
+          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          oauth-secret: ${{ secrets.TS_OAUTH_CLIENT_SECRET }}
+          tags: tag:dns-failover
+          hostname: gha-dns-failover
+          args: --accept-dns=false
+          timeout: 1m
+
+      - name: Make sure dig is available
+        run: command -v dig >/dev/null || (sudo apt-get update -qq && sudo apt-get install -y -qq dnsutils)
+
+      - name: Probe the Pi-hole and switch the tailnet DNS
         env:
           TS_OAUTH_CLIENT_ID: ${{ secrets.TS_OAUTH_CLIENT_ID }}
           TS_OAUTH_CLIENT_SECRET: ${{ secrets.TS_OAUTH_CLIENT_SECRET }}
@@ -34,6 +51,8 @@ jobs:
           PRIMARY_DNS: ${{ secrets.PRIMARY_DNS }}
           FALLBACK_DNS: ${{ vars.FALLBACK_DNS }}
           OFFLINE_GRACE_SECONDS: ${{ vars.OFFLINE_GRACE_SECONDS }}
+          TAILNET_JOINED: ${{ steps.join.outcome == 'success' && '1' || '0' }}
+          TAILSCALE: sudo -n tailscale
           DRY_RUN: ${{ inputs.dry_run && '1' || '0' }}
         run: ./failover.sh
 
