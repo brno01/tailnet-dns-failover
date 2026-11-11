@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+# Fake curl for the bats tests. Serves fixtures from $FAKE_DIR by URL and appends every
+# POST body to $FAKE_DIR/posts. Touch $FAKE_DIR/fail-devices to make the devices call fail.
+set -euo pipefail
+method=GET url="" body=""
+while [ $# -gt 0 ]; do
+    case "$1" in
+        -X) method=$2; shift ;;
+        --data) body=$2; shift ;;
+        --data-urlencode | -H | --retry) shift ;;
+        http*) url=$1 ;;
+    esac
+    shift
+done
+case "$url" in
+    */oauth/token) echo '{"access_token":"fake-token"}' ;;
+    */devices*)
+        [ -e "$FAKE_DIR/fail-devices" ] && { echo "curl: (22) 500" >&2; exit 22; }
+        cat "$FAKE_DIR/devices.json" ;;
+    */dns/nameservers)
+        if [ "$method" = POST ]; then
+            printf '%s' "$body" >> "$FAKE_DIR/posts"
+            printf '%s' "$body"
+        else
+            cat "$FAKE_DIR/nameservers.json"
+        fi ;;
+    *) echo "fake-curl: unexpected url $url" >&2; exit 99 ;;
+esac

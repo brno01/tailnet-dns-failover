@@ -1,0 +1,45 @@
+name: dns-failover
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"   # check the watched device
+    - cron: "23 4 * * 1"    # weekly: also keep this schedule from being auto-disabled
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Only report what would change"
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+  actions: write   # keepalive step re-enables this workflow
+
+concurrency:
+  group: dns-failover
+  cancel-in-progress: false
+
+jobs:
+  failover:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check the device and switch the tailnet DNS
+        env:
+          TS_OAUTH_CLIENT_ID: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          TS_OAUTH_CLIENT_SECRET: ${{ secrets.TS_OAUTH_CLIENT_SECRET }}
+          TS_DEVICE: ${{ secrets.TS_DEVICE }}
+          PRIMARY_DNS: ${{ secrets.PRIMARY_DNS }}
+          FALLBACK_DNS: ${{ vars.FALLBACK_DNS }}
+          OFFLINE_GRACE_SECONDS: ${{ vars.OFFLINE_GRACE_SECONDS }}
+          DRY_RUN: ${{ inputs.dry_run && '1' || '0' }}
+        run: ./failover.sh
+
+      - name: Keep the schedule alive
+        # GitHub disables scheduled workflows in public repos after 60 days without activity.
+        if: github.event.schedule == '23 4 * * 1'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api -X PUT "repos/${{ github.repository }}/actions/workflows/failover.yml/enable"

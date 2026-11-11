@@ -1,0 +1,9 @@
+# Configuração do Orca para este repositório.
+# Abas abertas em cada novo worktree. Na primeira vez, o Orca pede aprovação ("trust") para os comandos.
+# Para ter um dev server, acrescente por exemplo:
+#   - title: Dev
+#     command: npm run dev
+defaultTabs:
+  - title: Claude
+    command: claude
+  - title: Shell
