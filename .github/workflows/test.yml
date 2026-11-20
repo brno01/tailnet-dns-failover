@@ -16,6 +16,6 @@ jobs:
       - name: Install bats
         run: sudo apt-get update -qq && sudo apt-get install -y -qq bats
       - name: Lint
-        run: shellcheck failover.sh tests/fake-curl
+        run: shellcheck failover.sh tests/fake-curl host/*.sh
       - name: Test
         run: bats tests/

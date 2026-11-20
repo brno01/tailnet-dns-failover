@@ -58,6 +58,29 @@ anything else, the workflow leaves them alone until they are set back to one of 
 Logs are public in a public repository; the script never prints the device name or the
 resolver addresses, and the secrets are masked by GitHub.
 
+## Host-side failback
+
+GitHub skips most scheduled runs (often only a handful a day instead of 288), so after an
+outage the tailnet can stay on the fallback long after the Pi-hole is back. `host/failback.sh`
+runs on the Pi-hole host every 3 minutes (systemd user timer). If the tailnet still pushes
+the fallback resolvers to that node while the local Pi-hole answers a DNS query, it
+dispatches the workflow with `dry_run=false`. It rate-limits itself (`MIN_INTERVAL_SECONDS`,
+default 600), skips if a run is already queued or in progress, and never logs addresses.
+
+Install as the user that is logged in to `gh` with the `workflow` scope (lingering enabled):
+
+```bash
+host/install.sh                                    # installs, does not enable
+systemctl --user enable --now tailnet-dns-failback.timer
+journalctl --user -u tailnet-dns-failback -f       # watch it
+host/install.sh --uninstall                        # disable and remove
+```
+
+Try it safely first: `DRY_RUN=1 host/failback.sh`.
+
+This only handles **failback**. Failover when the whole site is down (the host cannot run
+anything) still depends on the scheduled run or an external trigger.
+
 ## Limits
 
 - GitHub runs scheduled workflows every 5 minutes at best and often a few minutes late, so
@@ -70,7 +93,7 @@ resolver addresses, and the secrets are masked by GitHub.
 ## Development
 
 ```bash
-shellcheck failover.sh tests/fake-curl
+shellcheck failover.sh tests/fake-curl host/*.sh
 bats tests/
 ```
 
