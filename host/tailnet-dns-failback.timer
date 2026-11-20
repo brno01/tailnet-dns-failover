@@ -1,0 +1,10 @@
+[Unit]
+Description=Run the tailnet DNS failback check every few minutes
+
+[Timer]
+OnBootSec=3min
+OnUnitActiveSec=3min
+AccuracySec=30s
+
+[Install]
+WantedBy=timers.target

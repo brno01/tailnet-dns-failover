@@ -13,14 +13,15 @@ Bash + `curl` + `jq`, GitHub Actions. Testes com `bats` (via Homebrew). Sem gere
 | Ação | Comando |
 |---|---|
 | Testes | `bats tests/` |
-| Lint | `shellcheck failover.sh tests/fake-curl` |
+| Lint | `shellcheck failover.sh tests/fake-curl host/*.sh` |
 | Rodar contra a tailnet real sem mudar nada | `DRY_RUN=1 TS_OAUTH_CLIENT_ID=… TS_OAUTH_CLIENT_SECRET=… TS_DEVICE=… PRIMARY_DNS=… ./failover.sh` |
 
 ## Estrutura
 - `failover.sh`: toda a lógica (token OAuth, estado do dispositivo, lista atual, troca).
 - `.github/workflows/failover.yml`: agendamento a cada 5 min, `workflow_dispatch` com dry run e passo semanal que reabilita o workflow (regra dos 60 dias).
 - `.github/workflows/test.yml`: shellcheck + bats em push/PR.
-- `tests/`: `failover.bats` (fakes de `dig` e `tailscale` criados no `setup`) e `fake-curl` (fixtures por URL, grava os POSTs).
+- `host/`: failback no host do Pi-hole (`failback.sh` dispara o workflow com `dry_run=false` quando o Pi-hole responde mas a tailnet ainda está no fallback), units systemd de usuário (`tailnet-dns-failback.service/.timer`) e `install.sh` (`--uninstall`; não habilita o timer).
+- `tests/`: `failback.bats` (fakes de `tailscale`, `dig` e `gh`), `failover.bats` (fakes de `dig` e `tailscale` criados no `setup`) e `fake-curl` (fixtures por URL, grava os POSTs).
 
 ## Convenções
 - Branch padrão: `master`. Trabalhe em branches de feature.
