@@ -1,5 +1,9 @@
 # tailnet-dns-failover
 
+[![test](https://github.com/brno01/tailnet-dns-failover/actions/workflows/test.yml/badge.svg)](https://github.com/brno01/tailnet-dns-failover/actions/workflows/test.yml)
+[![security](https://github.com/brno01/tailnet-dns-failover/actions/workflows/security.yml/badge.svg)](https://github.com/brno01/tailnet-dns-failover/actions/workflows/security.yml)
+[![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 Keeps a Tailscale tailnet's DNS going through a self-hosted Pi-hole, and fails over to a
 public resolver while the Pi-hole does not answer: its host is down **or** just the
 Pi-hole service is. Runs every 5 minutes on GitHub Actions, so it keeps working when
@@ -99,3 +103,20 @@ bats tests/
 
 The tests run `failover.sh` against fake `curl`, `dig` and `tailscale`, which serve fixtures
 and record every write, so they never touch a real tailnet.
+
+Every pull request and every push to `master` also runs the `security` workflow: secrets,
+static analysis, shell scripts and the workflows themselves.
+
+## Releases
+
+Pushing a tag such as `v1.2.3` creates the GitHub Release with generated notes.
+
+## Security
+
+Please report a vulnerability through the **Security** tab (**Report a vulnerability**),
+not in a public issue. Nothing that identifies a tailnet belongs in an issue, a pull
+request or a log of this repository.
+
+## License
+
+[MIT](LICENSE)
