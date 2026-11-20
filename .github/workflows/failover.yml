@@ -24,14 +24,16 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
 
       # Ephemeral node tagged tag:dns-failover; the tailnet policy lets it reach only
       # port 53 of the Pi-hole. If joining fails, failover.sh only acts on "host offline".
       - name: Join the tailnet
         id: join
         continue-on-error: true
-        uses: tailscale/github-action@v4
+        uses: tailscale/github-action@064b10558093f38325e838ddea35486bdc6b1d5c # v4.4.0
         with:
           oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
           oauth-secret: ${{ secrets.TS_OAUTH_CLIENT_SECRET }}

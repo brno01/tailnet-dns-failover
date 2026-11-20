@@ -1,0 +1,14 @@
+name: release
+
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions: {}
+
+jobs:
+  release:
+    permissions:
+      contents: write
+    uses: brno01/.github/.github/workflows/release.yml@v1
